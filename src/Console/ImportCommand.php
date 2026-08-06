@@ -33,24 +33,30 @@ class ImportCommand extends Command
     public function handle(Dispatcher $events)
     {
         $modelclass = $this->argument('model');
+        $chunkNumber = 0;
 
-        $modelclass::get()->each(function ($model) use ($modelclass) {
-            $array              = $model->toSearchableArray();
-            $modelclass         = str_replace("\App", "App", $modelclass);
-            $apsearchable       = APSearchable::where('searchable_id', $model->getKey())->where("searchable_model", $modelclass)->first() ?? new APSearchable();
-            $searchable_data    = mb_strtolower(implode(" ", $model->toSearchableArray()));
+        $modelclass::chunkById(100, function ($models) use ($modelclass, &$chunkNumber) {
+            $chunkNumber++;
+            $models->each(function ($model) use ($modelclass) {
+                $array              = $model->toSearchableArray();
+                $modelclass         = str_replace("\App", "App", $modelclass);
+                $apsearchable       = APSearchable::where('searchable_id', $model->getKey())->where("searchable_model", $modelclass)->first() ?? new APSearchable();
+                $searchable_data    = mb_strtolower(implode(" ", $model->toSearchableArray()));
 
-            if (empty($array)) {
-                return;
-            }
+                if (empty($array)) {
+                    return;
+                }
 
-            $apsearchable->fill([
-                "searchable_id"     => $model->getKey(),
-                "searchable_model"  => $modelclass,
-                "searchable_data"   => $searchable_data,
-            ]);
-            $apsearchable->save();
-            $this->line('<comment>Imported [' . $modelclass . '] model ID:</comment> ' . $apsearchable->id);
+                $apsearchable->fill([
+                    "searchable_id"     => $model->getKey(),
+                    "searchable_model"  => $modelclass,
+                    "searchable_data"   => $searchable_data,
+                ]);
+                $apsearchable->save();
+                $this->line('<comment>Imported [' . $modelclass . '] model ID:</comment> ' . $apsearchable->id);
+            });
+
+            $this->info('Chunk ' . $chunkNumber . ' completed.');
         });
     }
 }
