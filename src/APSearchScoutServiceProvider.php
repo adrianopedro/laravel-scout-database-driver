@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace AdrianoPedro\Scout;
 
@@ -20,10 +20,11 @@ class APSearchScoutServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        $this->app[EngineManager::class]->extend('apsearch', function ($app) {
+        $provider = $this;
+        $this->app[EngineManager::class]->extend('apsearch',  function ($app) use ($provider) {
             $apsearchable = new APSearchable();
 
-            $this->setSearchMode($apsearchable);
+            $provider->setSearchMode($apsearchable);
 
             return new APSearchEngine($apsearchable);
         });
@@ -32,7 +33,7 @@ class APSearchScoutServiceProvider extends ServiceProvider
             $this->commands([
                 ImportCommand::class,
             ]);
-            
+
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
             $this->publishes([
@@ -47,7 +48,7 @@ class APSearchScoutServiceProvider extends ServiceProvider
     }
 
 
-    protected function setSearchMode($apsearchable)
+    public function setSearchMode($apsearchable)
     {
         $apsearchable->searchMode = config('scout.apsearch.searchMode', $apsearchable->searchMode);
     }
